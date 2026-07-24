@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JobFit</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a222c;
+      --line: #2b3644;
+      --text: #e8eef4;
+      --muted: #93a1b1;
+      --accent: #6ee7b7;
+      --warn: #fbbf24;
+      --bad: #fb7185;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    main { max-width: 1120px; margin: 0 auto; padding: 28px 20px 56px; }
+    h1 { margin: 0 0 18px; font-size: 1.5rem; }
+    .tabs { display: flex; gap: 8px; margin: 0 0 16px; flex-wrap: wrap; }
+    button, .file-btn {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font: inherit;
+    }
+    button.primary {
+      background: var(--accent);
+      color: #062016;
+      border-color: var(--accent);
+      font-weight: 650;
+    }
+    button.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    button.active { border-color: var(--accent); color: var(--accent); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+    .box {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .box-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .box-head h2 { margin: 0; font-size: 0.95rem; }
+    .file-meta { color: var(--muted); font-size: 0.8rem; margin: 6px 0 0; }
+    .file-meta.bad { color: var(--bad); }
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      resize: vertical;
+      background: #121920;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      font: 0.92rem/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .actions { margin: 16px 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    button.toggle {
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    button.toggle:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    button.toggle.on {
+      background: var(--accent);
+      color: #062016;
+      border-color: var(--accent);
+      font-weight: 650;
+    }
+    button.toggle:disabled { opacity: 0.55; cursor: not-allowed; }
+    .status-info { color: var(--accent); }
+    .error { color: var(--bad); }
+    .llm-warn {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: -6px 0 14px;
+      padding: 8px 12px;
+      border: 1px solid #5b4a1f;
+      background: #2a2414;
+      border-radius: 8px;
+      color: var(--warn);
+      font-size: 0.82rem;
+      line-height: 1.4;
+      max-width: 42rem;
+    }
+    .llm-warn[hidden] { display: none !important; }
+    .llm-summary {
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border: 1px solid #2a5a48;
+      background: #12352b;
+      border-radius: 10px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .llm-summary .label {
+      display: inline-block;
+      margin: 0 0 8px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #062016;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .llm-summary p { margin: 0; }
+    .llm-summary[hidden],
+    .progress-card[hidden] {
+      display: none !important;
+    }
+    .progress-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border: 1px dashed var(--accent);
+      background: #12352b;
+      border-radius: 10px;
+      color: var(--accent);
+    }
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #2a5a48;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex: 0 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .scores { display: flex; gap: 12px; flex-wrap: wrap; }
+    .score {
+      flex: 1;
+      min-width: 160px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .score b { display: block; font-size: 1.5rem; margin-top: 4px; }
+    .bar { height: 8px; background: #243040; border-radius: 99px; overflow: hidden; margin-top: 8px; }
+    .bar > span { display: block; height: 100%; background: var(--accent); }
+    .bar.warn > span { background: var(--warn); }
+    .bar.bad > span { background: var(--bad); }
+    .lists { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    @media (max-width: 800px) { .lists { grid-template-columns: 1fr; } }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+    .card h3 { margin: 0 0 8px; font-size: 0.9rem; color: var(--muted); }
+    .chip { display: inline-block; margin: 0 6px 6px 0; padding: 4px 8px; border-radius: 999px; background: #243040; font-size: 0.85rem; }
+    .chip.ok { background: #134e3a; }
+    .chip.miss { background: #4c1d24; }
+    .empty { color: var(--muted); }
+    .panel { display: none; }
+    .panel.show { display: block; }
+    ul.gaps { margin: 0; padding-left: 18px; }
+    ul.gaps li { margin: 0 0 8px; }
+    input[type="file"] { display: none; }
+    #analysis { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>JobFit</h1>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="score">Matching Score</button>
+      <button class="tab" data-tab="skills">Skills</button>
+      <button class="tab" data-tab="keywords">Keywords</button>
+      <button class="tab" data-tab="gaps">Gaps</button>
+    </div>
+
+    <div class="grid">
+      <section class="box">
+        <div class="box-head">
+          <h2>Job description</h2>
+          <label class="file-btn">Upload
+            <input id="jobFile" type="file" accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown" />
+          </label>
+        </div>
+        <textarea id="job" maxlength="80000" placeholder="Upload a PDF or paste text"></textarea>
+        <p class="file-meta" id="jobMeta"></p>
+      </section>
+      <section class="box">
+        <div class="box-head">
+          <h2>Resume</h2>
+          <label class="file-btn">Upload
+            <input id="resumeFile" type="file" accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown" />
+          </label>
+        </div>
+        <textarea id="resume" maxlength="80000" placeholder="Upload a PDF or paste text"></textarea>
+        <p class="file-meta" id="resumeMeta"></p>
+      </section>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="primary" id="matchBtn">Analyze</button>
+      <button type="button" id="llmToggle" class="toggle" aria-pressed="false" title="Optional. Scores still come from the dictionary matcher.">Gemini assist: Off</button>
+      <span id="status" class="error"></span>
+    </div>
+    <p class="llm-warn" id="llmWarn" hidden>
+      Gemini assist sends the job description and resume to Google. Scores still come from the local matcher.
+    </p>
+
+    <section id="analysis">
+      <div class="panel show" id="tab-score">
+        <p class="empty" id="scoreEmpty">Upload both files, then analyze.</p>
+        <div id="scoreBody" hidden>
+          <div class="scores">
+            <div class="score">Matching score <b id="overall">—</b><div class="bar" id="overallBar"><span></span></div></div>
+            <div class="score">Skill coverage <b id="coverage">—</b><div class="bar" id="coverageBar"><span></span></div></div>
+            <div class="score">Text similarity <b id="similarity">—</b><div class="bar" id="similarityBar"><span></span></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" id="tab-skills">
+        <p class="empty" id="skillsEmpty">Upload both files, then analyze.</p>
+        <div class="lists" id="skillsBody" hidden>
+          <div class="card"><h3>Matched</h3><div id="matched"></div></div>
+          <div class="card"><h3>Missing</h3><div id="missing"></div></div>
+          <div class="card"><h3>Extra</h3><div id="extra"></div></div>
+        </div>
+      </div>
+      <div class="panel" id="tab-keywords">
+        <p class="empty" id="keywordsEmpty">Upload both files, then analyze.</p>
+        <div class="lists" id="keywordsBody" hidden>
+          <div class="card"><h3>Shared</h3><div id="sharedKw"></div></div>
+          <div class="card"><h3>Job only</h3><div id="jobKw"></div></div>
+          <div class="card"><h3>Resume only</h3><div id="resumeKw"></div></div>
+        </div>
+      </div>
+      <div class="panel" id="tab-gaps">
+        <p class="empty" id="gapsEmpty">Upload both files, then analyze.</p>
+        <div class="card" id="gapsBody" hidden>
+          <div class="progress-card" id="llmProgress" hidden>
+            <span class="spinner"></span>
+            Gemini is reviewing qualitative gaps…
+          </div>
+          <div class="llm-summary" id="llmSummary" hidden>
+            <span class="label">Gemini</span>
+            <p id="llmSummaryText"></p>
+          </div>
+          <ul class="gaps" id="suggestions"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script>
+    const MIN_CHARS = 20;
+    const MAX_CHARS = 80000;
+    const MAX_BYTES = 5 * 1024 * 1024;
+    const jobEl = document.getElementById("job");
+    const resumeEl = document.getElementById("resume");
+    const statusEl = document.getElementById("status");
+    const llmToggle = document.getElementById("llmToggle");
+    let useLlm = false;
+    let llmReady = false;
+
+    function setMeta(id, text, bad) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = "file-meta" + (bad ? " bad" : "");
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function chips(id, items, cls) {
+      const el = document.getElementById(id);
+      if (!items.length) {
+        el.innerHTML = '<span class="empty">None</span>';
+        return;
+      }
+      el.innerHTML = items
+        .map((s) => `<span class="chip ${cls === "ok" || cls === "miss" ? cls : ""}">${escapeHtml(s)}</span>`)
+        .join("");
+    }
+
+    function keywordChips(id, items) {
+      chips(id, items.map((item) => item.term), "");
+    }
+
+    function tone(value) {
+      if (value >= 0.6) return "";
+      if (value >= 0.3) return "warn";
+      return "bad";
+    }
+
+    function fillBar(id, value) {
+      const bar = document.getElementById(id);
+      bar.className = "bar " + tone(value);
+      bar.querySelector("span").style.width = Math.round(value * 100) + "%";
+    }
+
+    function pct(value) {
+      return Math.round(value * 100) + "%";
+    }
+
+    function apiError(data, fallback) {
+      if (!data) return fallback;
+      if (typeof data.detail === "string") return data.detail;
+      if (Array.isArray(data.detail) && data.detail[0] && data.detail[0].msg) {
+        return data.detail[0].msg;
+      }
+      return fallback;
+    }
+
+    function setStatus(text, kind) {
+      statusEl.textContent = text || "";
+      statusEl.className = kind === "info" ? "status-info" : "error";
+    }
+
+    function showGapsTab() {
+      document.querySelectorAll(".tab").forEach((el) => el.classList.remove("active"));
+      document.querySelectorAll(".panel").forEach((el) => el.classList.remove("show"));
+      const tab = document.querySelector('.tab[data-tab="gaps"]');
+      if (tab) tab.classList.add("active");
+      document.getElementById("tab-gaps").classList.add("show");
+    }
+
+    function setGeminiProgress(on) {
+      const progress = document.getElementById("llmProgress");
+      progress.hidden = !on;
+      if (on) {
+        document.getElementById("gapsEmpty").hidden = true;
+        document.getElementById("gapsBody").hidden = false;
+        showGapsTab();
+      }
+    }
+
+    function setLlmToggle(on) {
+      useLlm = Boolean(on) && llmReady;
+      llmToggle.classList.toggle("on", useLlm);
+      llmToggle.setAttribute("aria-pressed", useLlm ? "true" : "false");
+      llmToggle.textContent = useLlm ? "Gemini assist: On" : "Gemini assist: Off";
+      document.getElementById("llmWarn").hidden = !useLlm;
+    }
+
+    async function loadStatus() {
+      try {
+        const res = await fetch("/api/status");
+        const data = await res.json().catch(() => ({}));
+        llmReady = Boolean(data.llm_ready);
+      } catch (err) {
+        llmReady = false;
+      }
+      llmToggle.disabled = !llmReady;
+      llmToggle.title = llmReady
+        ? "Optional. Scores still come from the dictionary matcher."
+        : "Set GEMINI_API_KEY on the server to enable Gemini.";
+      if (!llmReady) setLlmToggle(false);
+    }
+
+    llmToggle.addEventListener("click", () => {
+      if (!llmReady) return;
+      setLlmToggle(!useLlm);
+    });
+    loadStatus();
+
+    function clearAnalysis() {
+      ["score", "skills", "keywords", "gaps"].forEach((name) => {
+        document.getElementById(name + "Empty").hidden = false;
+        document.getElementById(name + "Body").hidden = true;
+      });
+      document.getElementById("llmProgress").hidden = true;
+      document.getElementById("llmSummary").hidden = true;
+      document.getElementById("llmSummaryText").textContent = "";
+    }
+
+    async function uploadInto(input, textarea, metaId) {
+      const file = input.files[0];
+      if (!file) return;
+      const name = file.name.toLowerCase();
+      if (!(/\.(pdf|txt|md)$/).test(name)) {
+        setMeta(metaId, "Use a PDF, TXT, or MD file.", true);
+        input.value = "";
+        return;
+      }
+      if (file.size === 0) {
+        setMeta(metaId, "That file is empty.", true);
+        input.value = "";
+        return;
+      }
+      if (file.size > MAX_BYTES) {
+        setMeta(metaId, "File is too large (max 5 MB).", true);
+        input.value = "";
+        return;
+      }
+      const body = new FormData();
+      body.append("file", file);
+      setMeta(metaId, "Reading " + file.name + "…");
+      try {
+        const res = await fetch("/api/extract", { method: "POST", body });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setMeta(metaId, apiError(data, "Could not read that file."), true);
+          input.value = "";
+          return;
+        }
+        textarea.value = data.text;
+        setMeta(metaId, file.name);
+        clearAnalysis();
+      } catch (err) {
+        setMeta(metaId, "Could not reach the server.", true);
+        input.value = "";
+      }
+    }
+
+    document.getElementById("jobFile").addEventListener("change", (e) => {
+      uploadInto(e.target, jobEl, "jobMeta");
+    });
+    document.getElementById("resumeFile").addEventListener("change", (e) => {
+      uploadInto(e.target, resumeEl, "resumeMeta");
+    });
+    jobEl.addEventListener("input", clearAnalysis);
+    resumeEl.addEventListener("input", clearAnalysis);
+
+    document.querySelectorAll(".tab").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((el) => el.classList.remove("active"));
+        document.querySelectorAll(".panel").forEach((el) => el.classList.remove("show"));
+        btn.classList.add("active");
+        document.getElementById("tab-" + btn.dataset.tab).classList.add("show");
+      });
+    });
+
+    document.getElementById("matchBtn").onclick = async () => {
+      const btn = document.getElementById("matchBtn");
+      setStatus("");
+      const job = jobEl.value.trim();
+      const resume = resumeEl.value.trim();
+      if (job.length < MIN_CHARS || resume.length < MIN_CHARS) {
+        setStatus("Add a job description and a resume first.");
+        return;
+      }
+      if (job.length > MAX_CHARS || resume.length > MAX_CHARS) {
+        setStatus("Text is too long (max 80,000 characters).");
+        return;
+      }
+      if (job.toLowerCase() === resume.toLowerCase()) {
+        setStatus("Job description and resume look the same.");
+        return;
+      }
+      btn.disabled = true;
+      if (useLlm) {
+        setGeminiProgress(true);
+      }
+      try {
+        const res = await fetch("/api/match", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ job, resume, use_llm: useLlm }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setStatus(apiError(data, "Analyze failed"));
+          return;
+        }
+        document.getElementById("overall").textContent = pct(data.overall_score);
+        document.getElementById("coverage").textContent = pct(data.skill_coverage);
+        document.getElementById("similarity").textContent = pct(data.similarity);
+        fillBar("overallBar", data.overall_score);
+        fillBar("coverageBar", data.skill_coverage);
+        fillBar("similarityBar", data.similarity);
+        chips("matched", data.matched_skills, "ok");
+        chips("missing", data.missing_skills, "miss");
+        chips("extra", data.extra_skills, "");
+        keywordChips("sharedKw", data.shared_keywords);
+        keywordChips("jobKw", data.job_keywords);
+        keywordChips("resumeKw", data.resume_keywords);
+        const gaps = document.getElementById("suggestions");
+        const summary = document.getElementById("llmSummary");
+        const summaryText = document.getElementById("llmSummaryText");
+        document.getElementById("llmProgress").hidden = true;
+        if (data.llm_used && data.llm_summary) {
+          summary.hidden = false;
+          summaryText.textContent = data.llm_summary;
+        } else {
+          summary.hidden = true;
+          summaryText.textContent = "";
+        }
+        gaps.innerHTML = data.suggestions.length
+          ? data.suggestions.map((s) => "<li>" + escapeHtml(s) + "</li>").join("")
+          : '<li class="empty">No skill gaps found.</li>';
+        setStatus(data.llm_error || "");
+        ["score", "skills", "keywords", "gaps"].forEach((name) => {
+          document.getElementById(name + "Empty").hidden = true;
+          document.getElementById(name + "Body").hidden = false;
+        });
+      } catch (err) {
+        setStatus("Could not reach the server.");
+        if (!document.getElementById("suggestions").childElementCount) {
+          document.getElementById("gapsEmpty").hidden = false;
+          document.getElementById("gapsBody").hidden = true;
+        }
+      } finally {
+        setGeminiProgress(false);
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
