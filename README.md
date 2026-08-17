@@ -19,8 +19,6 @@ pip install -r requirements.txt
 python -m uvicorn web:app --host 0.0.0.0 --port 8000
 ```
 
-Open http://localhost:8000
-
 ## Tests
 
 ```bash
