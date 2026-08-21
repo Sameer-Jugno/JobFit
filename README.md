@@ -15,6 +15,12 @@ Compare a job description and a resume. Paste text, or upload a PDF / TXT / MD f
 
 Matching score, skills, and keywords come from a local skill catalog plus TF-IDF. Gemini assist is optional: it only adds a short fit summary and extra qualitative gaps. It does not change the score.
 
+## Live Demo
+
+https://job-fit--sameerjugno3.replit.app
+
+This web app is password protected. Ask me for the password if you want to try it.
+
 ## Setup
 
 ```bash
