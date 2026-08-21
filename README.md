@@ -1,14 +1,3 @@
----
-title: JobFit
-emoji: 💼
-colorFrom: blue
-colorTo: green
-sdk: docker
-app_port: 7860
-pinned: false
-license: mit
----
-
 # JobFit
 
 Compare a job description and a resume. Paste text, or upload a PDF / TXT / MD file.
@@ -19,7 +8,7 @@ Matching score, skills, and keywords come from a local skill catalog plus TF-IDF
 
 https://job-fit--sameerjugno3.replit.app
 
-This web app is password protected. Ask me for the password if you want to try it.
+This web app is password protected.
 
 ## Setup
 
